@@ -1,0 +1,27 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+.main-feed-container {
+  display: flex;
+  height: 100vh;
+  background: #111;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+.feed-section {
+  flex: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-section {
+  flex: 1;
+  background: #181818;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 40px;
+  box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+}
