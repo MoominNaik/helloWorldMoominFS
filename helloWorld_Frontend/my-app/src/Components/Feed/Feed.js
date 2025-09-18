@@ -26,79 +26,76 @@ const Feed = ({ onRightSwipe, onLeftSwipe }) => {
     }
   }, [CURRENT_USER]);
 
+  const visiblePosts = posts.filter((p) => !leftSwiped.includes(p.id));
+  const currentPost = visiblePosts[index] || null;
+
+  // Ensure index is always valid after left swipe
+  useEffect(() => {
+    if (index >= visiblePosts.length) {
+      setIndex(Math.max(visiblePosts.length - 1, 0));
+    }
+  }, [leftSwiped, posts]);
+
   const handleRightSwipe = async () => {
-    const post = posts[index];
+    if (!currentPost) return;
+
     const swipeTime = new Date().toISOString();
-  
-    // Save in context/state with timestamp
-    addRightSwipedPost({ ...post, swipedAt: swipeTime });
-  
+    addRightSwipedPost({ ...currentPost, swipedAt: swipeTime });
+
     try {
       await swipePost({
-        postId: post.id,
+        postId: currentPost.id,
         userId: CURRENT_USER.id,
         direction: "RIGHT",
-        swipedAt: swipeTime  // send the timestamp to backend
-
+        swipedAt: swipeTime
       });
-  
-      if (post.author && post.author.username) {
-        const messageContent = `👋 Hey ${post.author.username},  
-  I just right-swiped on your post **"${post.title}"**.  
-  
-  I’d love to collaborate with you on this! 🚀`;
-  
+
+      if (currentPost.author && currentPost.author.username) {
+        const messageContent = `👋 Hey ${currentPost.author.username},  
+I just right-swiped on your post **"${currentPost.title}"**.  
+
+I’d love to collaborate with you on this! 🚀`;
+
         await sendMessage({
           sender: CURRENT_USER.username,
           content: messageContent,
-          recipient: post.author.username,
+          recipient: currentPost.author.username,
           timestamp: swipeTime
         });
       }
     } catch (err) {
       console.error("Failed to save right swipe or send message:", err);
     }
-  
-    if (onRightSwipe) onRightSwipe(post, CURRENT_USER);
-  
-    setPosts(prev => prev.filter((p, i) => i !== index));
-  
-    if (visiblePosts.length === 1) {
-      setIndex(0);
-    } else if (index < visiblePosts.length - 1) {
-      setIndex(index);
-    } else {
-      setIndex(0);
-    }
+
+    if (onRightSwipe) onRightSwipe(currentPost, CURRENT_USER);
+    setPosts(prev => prev.filter((p) => p.id !== currentPost.id));
   };
 
   const handleLeftSwipe = async () => {
-    const post = posts[index];
-    setLeftSwiped((prev) => [...prev, post.id]);
+    if (!currentPost) return;
+
+    setLeftSwiped(prev => [...prev, currentPost.id]);
+
     try {
       await leftSwipePost({
-        postId: post.id,
+        postId: currentPost.id,
         userId: CURRENT_USER.id,
         timestamp: new Date().toISOString(),
       });
     } catch (err) {
       console.error("Failed to save left swipe:", err);
     }
-    if (onLeftSwipe) onLeftSwipe(post, CURRENT_USER);
-    goToNext();
+
+    if (onLeftSwipe) onLeftSwipe(currentPost, CURRENT_USER);
   };
 
-  const visiblePosts = posts.filter((p) => !leftSwiped.includes(p.id));
-  const currentPost = visiblePosts[index] || null;
-
-  function goToNext() {
+  const goToNext = () => {
     if (index < visiblePosts.length - 1) setIndex(index + 1);
-    else if (visiblePosts.length > 0) setIndex(visiblePosts.length - 1);
-  }
+  };
 
-  function goToPrev() {
+  const goToPrev = () => {
     if (index > 0) setIndex(index - 1);
-  }
+  };
 
   return (
     <div className="flex flex-col h-full min-h-screen bg-black">
