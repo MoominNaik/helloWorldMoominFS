@@ -7,7 +7,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
-
 import java.util.List;
 
 @Service
@@ -58,5 +57,9 @@ public class UserService {
     // Fetch all users
     public List<User> findAllUsers() {
         return userRepository.findAll();
+    }
+
+    public List<User> searchUsers(String query) {
+        return userRepository.searchUsers(query);
     }
 }

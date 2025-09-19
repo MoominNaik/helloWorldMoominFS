@@ -108,6 +108,20 @@ public class UserController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> searchUsers(@RequestParam String query) {
+        try {
+            if (query == null || query.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Search query cannot be empty"));
+            }
+            List<User> users = userService.searchUsers(query);
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An error occurred while searching for users"));
+        }
+    }
+
     // Fetch all users
     @GetMapping("")
     public ResponseEntity<List<User>> getAllUsers() {
