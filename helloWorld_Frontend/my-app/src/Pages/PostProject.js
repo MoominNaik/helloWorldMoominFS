@@ -60,90 +60,85 @@ const PostProject = () => {
     try {
       await axios.post(`http://localhost:9091/api/posts?authorId=${CURRENT_USER.id}`, postData);
       setSuccess(true);
-      setTimeout(() => {
-        navigate("/profile");
-      }, 1200);
+      setTimeout(() => navigate("/profile"), 1200);
       setForm({ name: "", description: "", stack: "", image: null, category: "Web Development" });
       setPreview(null);
-    } catch (err) {
+    } catch {
       setError("Failed to post. Try again.");
     }
     setSubmitting(false);
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center py-10">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 font-mono">
+      <h2 className="text-3xl font-bold text-green-400 mb-10 text-center">
+        Say Hello to the World
+      </h2>
       <form
         onSubmit={handleSubmit}
-        className="bg-gray-900 border border-gray-800 rounded-xl shadow-lg p-8 w-full max-w-lg space-y-6"
+        className="bg-gray-900 p-8 w-full max-w-3xl mx-auto space-y-6 font-mono text-green-400 transition-all duration-200 shadow-[0_0_15px_#00FF7F] hover:shadow-[0_0_30px_#00FF7F] rounded-lg"
       >
-        <h2 className="text-2xl font-bold text-green-400 mb-2 text-center">Post a New Project</h2>
-        <input
-          type="text"
-          name="name"
-          placeholder="Project Name"
-          className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={form.name ?? ""}
-          onChange={handleChange}
-        />
-        <textarea
-          name="description"
-          placeholder="Project Description"
-          className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[100px]"
-          value={form.description ?? ""}
-          onChange={handleChange}
-        />
-        <input
-          type="text"
-          name="stack"
-          placeholder="Project Stack (e.g. React, Node.js, MongoDB)"
-          className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={form.stack ?? ""}
-          onChange={handleChange}
-        />
-        <div>
-          <label className="block text-gray-400 mb-1">Project Image</label>
-          <input
-            type="file"
-            name="image"
-            accept="image/*"
-            className="w-full text-gray-300"
-            onChange={handleChange}
-          />
-          {preview && (
-            <img src={preview} alt="Preview" className="mt-3 rounded-lg max-h-40 mx-auto" />
-          )}
-        </div>
-        <div>
-          <label className="block text-gray-400 mb-1">Project Category</label>
-          <select
-            name="category"
-            className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-            value={form.category ?? "Web Development"}
-            onChange={handleChange}
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-        {error && <div className="text-red-400 text-sm">{error}</div>}
-        {success && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-gray-900 border border-green-500 rounded-xl shadow-lg p-8 text-center">
-              <div className="text-green-400 text-lg font-bold mb-2">Project posted successfully!</div>
-              <div className="text-gray-300">Redirecting to your profile...</div>
-            </div>
-          </div>
-        )}
-        <button
-          type="submit"
-          className="w-full py-2 bg-gradient-to-r from-green-500 to-blue-500 hover:opacity-90 rounded-lg shadow-md transition text-white font-medium"
-          disabled={submitting}
-        >
-          {submitting ? "Posting..." : "Post Project"}
-        </button>
-      </form>
+  
+  <input
+    type="text"
+    name="name"
+    placeholder="Project Name"
+    className="w-full px-4 py-2 rounded-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-green-400"
+    value={form.name ?? ""}
+    onChange={handleChange}
+  />
+  
+  <textarea
+    name="description"
+    placeholder="Project Description"
+    className="w-full px-4 py-2 rounded-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-green-400 min-h-[100px]"
+    value={form.description ?? ""}
+    onChange={handleChange}
+  />
+
+  <input
+    type="text"
+    name="stack"
+    placeholder="Project Stack (e.g. React, Node.js)"
+    className="w-full px-4 py-2 rounded-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-green-400"
+    value={form.stack ?? ""}
+    onChange={handleChange}
+  />
+
+  <div>
+    <label className="block text-gray-400 mb-1">Project Image</label>
+    <input
+      type="file"
+      name="image"
+      accept="image/*"
+      className="w-full text-gray-300"
+      onChange={handleChange}
+    />
+    {preview && <img src={preview} alt="Preview" className="mt-3 rounded-sm max-h-40 mx-auto" />}
+  </div>
+
+  <div>
+    <label className="block text-gray-400 mb-1">Project Category</label>
+    <select
+      name="category"
+      className="w-full px-4 py-2 rounded-sm bg-gray-800 text-white focus:outline-none focus:ring-1 focus:ring-green-400"
+      value={form.category ?? "Web Development"}
+      onChange={handleChange}
+    >
+      {CATEGORIES.map((cat) => (
+        <option key={cat} value={cat}>{cat}</option>
+      ))}
+    </select>
+  </div>
+
+  <button
+    type="submit"
+    className="w-full py-3 font-mono text-xl font-bold text-black bg-green-500 shadow-none hover:shadow-[0_0_20px_#00FF7F] transition-all duration-200"
+    disabled={submitting}
+  >
+  Post
+</button>
+</form>
     </div>
   );
 };

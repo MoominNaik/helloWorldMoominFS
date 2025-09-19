@@ -1,80 +1,110 @@
-import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
-import React from "react";
-import { Link } from "react-router-dom";
-import { User, Users, UserPlus, MessageCircle, Heart } from "lucide-react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import {
+  Search,
+  PlusCircle,
+  User,
+  MessageCircle,
+  Heart,
+  LogOut,
+} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "../../AuthContext";
+
+const navItems = [
+  { icon: Search, label: "Search", path: "/search" },
+  { icon: PlusCircle, label: "Post Project", path: "/post-project" },
+  { icon: User, label: "Profile", path: "/profile" },
+  { icon: MessageCircle, label: "Chat", path: "/chat" },
+  { icon: Heart, label: "Right Swiped", path: "/right-swiped" },
+];
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 flex flex-col items-center justify-center space-y-8">
-        {/* Logo / Brand */}
-        <Link to="/" className="block w-full">
-          <h1 className="text-3xl font-extrabold text-green-400 tracking-wide border-b border-gray-800 pb-3 w-full text-center cursor-pointer hover:text-green-300 transition">
-            helloWorld
-          </h1>
-        </Link>
+  const location = useLocation();
+  const [activeItem, setActiveItem] = useState(location.pathname);
 
-        {/* Menu */}
-        <ul className="flex flex-col w-full space-y-4 text-gray-400 font-medium">
-          <li>
-            <button
-              onClick={() => navigate("/search")}
-              className="flex items-center justify-center space-x-3 hover:text-green-400 cursor-pointer transition w-full py-2"
-            >
-              <Search size={18} className="mr-2" />
-              <span>Search</span>
-            </button>
-          </li>
-          <li>
-            <Link
-              to="/post-project"
-              className="flex items-center justify-center space-x-3 hover:text-green-400 cursor-pointer transition"
-            >
-              <span className="font-bold text-lg">+</span>
-              <span>Post Project</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/profile"
-              className="flex items-center justify-center space-x-3 hover:text-green-400 cursor-pointer transition"
-            >
-              <User size={18} className="mr-2" />
-              <span>Profile</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/chat"
-              className="flex items-center justify-center space-x-3 hover:text-green-400 cursor-pointer transition"
-            >
-              <MessageCircle size={18} className="mr-2" />
-              <span>Chat</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/right-swiped"
-              className="flex items-center justify-center space-x-3 hover:text-green-400 cursor-pointer transition"
-            >
-              <Heart size={18} className="mr-2" />
-              <span>Right Swiped</span>
-            </Link>
-          </li>
-        </ul>
-      </div>
-      {user && (
-        <button
-          onClick={logout}
-          className="w-full py-3 bg-transparent hover:bg-gray-900 border-t border-gray-800 text-red-500 font-bold text-lg transition"
-          style={{ borderRadius: 0 }}
+  useEffect(() => {
+    setActiveItem(location.pathname);
+  }, [location]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  return (
+    <div className="flex flex-col justify-center items-center h-full bg-gray-900 text-green-400 font-mono w-80 fixed right-0 top-0 bottom-0 z-10">
+      {/* Logo */}
+      <Link to="/" className="mb-10">
+        <motion.h1
+          className="text-4xl font-bold tracking-wide text-center" // Slightly bigger
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          whileHover={{
+            scale: 1.05,
+            textShadow: "0 0 8px #22c55e, 0 0 12px #22c55e",
+          }}
         >
-          Logout
-        </button>
+          helloWorld
+        </motion.h1>
+      </Link>
+
+      {/* Navigation Items */}
+      <nav className="flex flex-col items-center space-y-3 w-full">
+        {navItems.map((item) => {
+          const isActive = activeItem.startsWith(item.path);
+          const Icon = item.icon;
+
+          return (
+            <motion.div
+              key={item.path}
+              className="relative w-full flex justify-center"
+              whileHover={{
+                scale: 1.08,
+              }}
+              transition={{ duration: 0.2 }}
+            >
+              <Link
+                to={item.path}
+                className={`flex items-center justify-center space-x-2 px-4 py-2 w-44 text-sm whitespace-nowrap transition-all duration-200 ${
+                  isActive ? "text-green-300" : "text-green-500"
+                }`}
+              >
+                <Icon size={16} />
+                <motion.span
+                  whileHover={{
+                    textShadow: "0 0 8px #22c55e, 0 0 12px #22c55e",
+                  }}
+                >
+                  {item.label}
+                </motion.span>
+              </Link>
+            </motion.div>
+          );
+        })}
+      </nav>
+
+      {/* Logout Button */}
+      {user && (
+        <motion.button
+          onClick={handleLogout}
+          className="flex items-center justify-center space-x-2 px-4 py-2 mt-10 w-44 text-sm whitespace-nowrap text-red-400 hover:text-red-300 font-mono"
+          whileHover={{
+            opacity: [1, 0.6, 1],
+            transition: { duration: 0.4, repeat: Infinity },
+          }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <LogOut size={16} />
+          <span>Logout</span>
+        </motion.button>
       )}
     </div>
   );

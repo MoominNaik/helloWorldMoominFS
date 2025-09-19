@@ -1,56 +1,47 @@
-import React, { useState } from "react";
+import React from "react";
+import { motion } from "framer-motion";
 
 const Post = ({ post, onRightSwipe, onLeftSwipe }) => {
-  const [open, setOpen] = useState(false);
-
-  // Construct image URL if post.image exists
-  const imageUrl = post.image
-    ? `http://localhost:9091/uploads/${post.image}` // adjust if backend serves images differently
-    : null;
-
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-lg p-6 w-full flex flex-col items-center justify-center">
-      
-      {/* Image from backend */}
-      <div className="w-full h-64 mb-4 flex items-center justify-center">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={post.title}
-            className="w-full h-full object-cover rounded-lg"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-800 rounded-lg flex items-center justify-center text-gray-500">
-            No Image
-          </div>
-        )}
+    <motion.div
+      className="bg-gray-900 border-2 border-green-400 shadow-[0_0_15px_#22c55e] p-6 w-full max-w-2xl mx-auto my-8 rounded-lg"
+      whileHover={{ scale: 1.02, boxShadow: "0 0 25px #22c55e" }}
+      transition={{ type: "spring", stiffness: 200 }}
+    >
+      {/* Image placeholder */}
+      <div className="w-full h-64 bg-gray-800 mb-6 flex items-center justify-center text-green-400 text-lg border border-green-500 rounded-lg">
+        [ IMAGE PLACEHOLDER ]
       </div>
 
       {/* Title + Description */}
-      <h2 className="text-xl font-semibold mb-2 text-white text-center">{post.title}</h2>
-      <p className="text-gray-400 mb-4 text-center">{post.description}</p>
+      <h2 className="text-2xl font-bold mb-3 text-green-400 text-center tracking-wide">
+        {post.title}
+      </h2>
+      <p className="text-gray-300 mb-6 text-center">{post.description}</p>
 
-      {/* User info centered */}
-      <div className="flex flex-col items-center mb-4 w-full">
-        <p className="text-sm text-gray-500 text-center">{post.user}</p>
+      {/* User info */}
+      <div className="mb-6 w-full text-center">
+        <p className="text-sm text-gray-400">Posted by {post.user}</p>
       </div>
 
-      {/* Navigation buttons centered */}
-      <div className="flex justify-center w-full max-w-[90%] mx-auto px-4 mt-6 space-x-8">
-        <button
+      {/* Buttons */}
+      <div className="flex justify-center space-x-8">
+        <motion.button
           onClick={onLeftSwipe}
-          className="px-6 py-2 bg-gray-900 text-red-500 rounded-lg text-xl font-bold hover:bg-gray-800 transition-colors"
+          className="px-6 py-2 border-2 border-red-500 text-red-500 text-xl font-bold hover:bg-red-500 hover:text-black transition-colors shadow-[0_0_10px_#ef4444]"
+          whileTap={{ scale: 0.9 }}
         >
           &lt;
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={onRightSwipe}
-          className="px-6 py-2 bg-gray-900 text-green-500 rounded-lg text-xl font-bold hover:bg-gray-800 transition-colors"
+          className="px-6 py-2 border-2 border-green-500 text-green-500 text-xl font-bold hover:bg-green-500 hover:text-black transition-colors shadow-[0_0_10px_#22c55e]"
+          whileTap={{ scale: 0.9 }}
         >
           &gt;
-        </button>
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
