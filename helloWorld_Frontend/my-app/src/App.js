@@ -1,6 +1,5 @@
 import React from 'react';
-import {BrowserRouter, Route, Routes} from 'react-router-dom';
-
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 import Home from './Pages/Home';
 import './index.css';
@@ -15,33 +14,34 @@ import { AppProvider } from './AppContext';
 import { AuthProvider, useAuth } from './AuthContext';
 import Login from './Components/Pages/Login';
 import Signup from './Components/Pages/Signup';
+import { ChatProvider } from './Components/Chat/ChatContext';
 //import Footer from './Components/Footer/Footer.js';
-
-
 
 function MainApp() {
   return (
     <AppProvider>
-      <BrowserRouter>
-        <div className="flex h-screen bg-black">
-          {/* Main Content */}
-          <div className="flex-1 h-full overflow-y-auto">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/right-swiped" element={<RightSwiped />} />
-              <Route path="/post-project" element={<PostProject />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/public-profile/:id" element={<PublicProfile />} />
-            </Routes>
+      <ChatProvider>
+        <BrowserRouter>
+          <div className="flex h-screen bg-black">
+            {/* Main Content */}
+            <div className="flex-1 h-full overflow-y-auto">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/right-swiped" element={<RightSwiped />} />
+                <Route path="/post-project" element={<PostProject />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/public-profile/:id" element={<PublicProfile />} />
+              </Routes>
+            </div>
+            {/* Sidebar Navbar on the right */}
+            <div className="w-64 border-l border-gray-800 bg-black h-full">
+              <Navbar />
+            </div>
           </div>
-          {/* Sidebar Navbar on the right */}
-          <div className="w-64 border-l border-gray-800 bg-black h-full">
-            <Navbar />
-          </div>
-        </div>
-      </BrowserRouter>
+        </BrowserRouter>
+      </ChatProvider>
     </AppProvider>
   );
 }

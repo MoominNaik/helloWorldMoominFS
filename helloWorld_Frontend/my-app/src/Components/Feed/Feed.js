@@ -15,7 +15,9 @@ const Feed = ({ onRightSwipe, onLeftSwipe }) => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await axios.get(`http://localhost:9091/api/posts/feed?userId=${CURRENT_USER.id}`);
+        const res = await axios.get(
+          `http://localhost:9091/api/posts/feed?userId=${CURRENT_USER.id}`
+        );
         setPosts(res.data);
       } catch (err) {
         setPosts([]);
@@ -38,43 +40,47 @@ const Feed = ({ onRightSwipe, onLeftSwipe }) => {
 
   const handleRightSwipe = async () => {
     if (!currentPost) return;
-
+  
     const swipeTime = new Date().toISOString();
     addRightSwipedPost({ ...currentPost, swipedAt: swipeTime });
-
+  
     try {
+      // Save swipe via API
       await swipePost({
         postId: currentPost.id,
         userId: CURRENT_USER.id,
         direction: "RIGHT",
-        swipedAt: swipeTime
+        timestamp: swipeTime,
       });
-
-      if (currentPost.author && currentPost.author.username) {
-        const messageContent = `👋 Hey ${currentPost.author.username},  
-I just right-swiped on your post **"${currentPost.title}"**.  
-
-I’d love to collaborate with you on this! 🚀`;
-
+  
+      // Determine recipient
+      const recipientUsername = currentPost.author?.username || currentPost.user;
+      if (recipientUsername) {
+        const messageContent = `👋 Hey ${recipientUsername},  
+  I just right-swiped on your post "${currentPost.title}".  
+  
+  I’d love to collaborate with you on this! 🚀`;
+  
         await sendMessage({
           sender: CURRENT_USER.username,
+          recipient: recipientUsername,
           content: messageContent,
-          recipient: currentPost.author.username,
-          timestamp: swipeTime
         });
       }
     } catch (err) {
       console.error("Failed to save right swipe or send message:", err);
     }
-
+  
     if (onRightSwipe) onRightSwipe(currentPost, CURRENT_USER);
-    setPosts(prev => prev.filter((p) => p.id !== currentPost.id));
+  
+    // Remove current post safely
+    setPosts((prev) => prev.filter((p) => (p.id ?? p._id) !== (currentPost.id ?? currentPost._id)));
   };
 
   const handleLeftSwipe = async () => {
     if (!currentPost) return;
 
-    setLeftSwiped(prev => [...prev, currentPost.id]);
+    setLeftSwiped((prev) => [...prev, currentPost.id]);
 
     try {
       await leftSwipePost({
@@ -105,10 +111,15 @@ I’d love to collaborate with you on this! 🚀`;
             <Post
               post={currentPost}
               onRightSwipe={handleRightSwipe}
-              onLeftSwipe={() => { handleLeftSwipe(); goToPrev(); }}
+              onLeftSwipe={() => {
+                handleLeftSwipe();
+                goToPrev();
+              }}
             />
           ) : (
-            <div className="text-center text-gray-400 text-xl py-20">No more posts to show.</div>
+            <div className="text-center text-gray-400 text-xl py-20">
+              No more posts to show.
+            </div>
           )}
         </div>
       </div>

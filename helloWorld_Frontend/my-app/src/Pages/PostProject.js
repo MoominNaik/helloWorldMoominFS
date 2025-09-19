@@ -36,10 +36,10 @@ const PostProject = () => {
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "image") {
-      setForm((f) => ({ ...f, image: files[0] }));
-      setPreview(files[0] ? URL.createObjectURL(files[0]) : null);
+      setForm((f) => ({ ...f, image: files?.[0] || null }));
+      setPreview(files?.[0] ? URL.createObjectURL(files[0]) : null);
     } else {
-      setForm((f) => ({ ...f, [name]: value }));
+      setForm((f) => ({ ...f, [name]: value ?? "" }));
     }
   };
 
@@ -48,7 +48,7 @@ const PostProject = () => {
     setSubmitting(true);
     setError(null);
     setSuccess(false);
-    // Prepare data for backend
+
     const postData = {
       title: form.name,
       description: form.description,
@@ -56,8 +56,8 @@ const PostProject = () => {
       category: form.category,
       image: form.image ? form.image.name : null,
     };
+
     try {
-      // Send post to backend using CURRENT_USER from context
       await axios.post(`http://localhost:9091/api/posts?authorId=${CURRENT_USER.id}`, postData);
       setSuccess(true);
       setTimeout(() => {
@@ -83,14 +83,14 @@ const PostProject = () => {
           name="name"
           placeholder="Project Name"
           className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={form.name}
+          value={form.name ?? ""}
           onChange={handleChange}
         />
         <textarea
           name="description"
           placeholder="Project Description"
           className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[100px]"
-          value={form.description}
+          value={form.description ?? ""}
           onChange={handleChange}
         />
         <input
@@ -98,7 +98,7 @@ const PostProject = () => {
           name="stack"
           placeholder="Project Stack (e.g. React, Node.js, MongoDB)"
           className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-          value={form.stack}
+          value={form.stack ?? ""}
           onChange={handleChange}
         />
         <div>
@@ -119,7 +119,7 @@ const PostProject = () => {
           <select
             name="category"
             className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-            value={form.category}
+            value={form.category ?? "Web Development"}
             onChange={handleChange}
           >
             {CATEGORIES.map((cat) => (

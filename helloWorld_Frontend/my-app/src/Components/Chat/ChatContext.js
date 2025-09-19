@@ -3,99 +3,85 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import * as chatApi from "./api";
 import { useAuth } from "../../AuthContext";
 
-const ChatContext = createContext();
-
+export const ChatContext = createContext();
 export const useChat = () => useContext(ChatContext);
 
 export const ChatProvider = ({ children }) => {
-  const [messages, setMessages] = useState([]); // current chat messages
-  const [allMessages, setAllMessages] = useState([]); // all messages for inbox
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [allUsers, setAllUsers] = useState([]);
   const { user: loggedInUser } = useAuth();
 
-  // Fetch all messages for the logged-in user (for inbox)
-  const fetchAllMessages = useCallback(() => {
-    if (loggedInUser) {
-      const currentUsername = loggedInUser.username || loggedInUser.name;
-      setLoading(true);
-      chatApi.getMessagesBySender(currentUsername)
-        .then((messages) => {
-          setAllMessages(messages);
-        })
-        .catch((err) => {
-          setError(err);
-        })
-        .finally(() => setLoading(false));
-    } else {
+  const [messages, setMessages] = useState([]);
+  const [allMessages, setAllMessages] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch all messages involving the logged-in user
+  const fetchAllMessages = useCallback(async () => {
+    if (!loggedInUser) {
       setAllMessages([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const currentUsername = loggedInUser.username || loggedInUser.name;
+      const msgs = await chatApi.getMessagesBySender(currentUsername);
+      setAllMessages(msgs);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
     }
   }, [loggedInUser]);
 
-  // Function to fetch messages between logged in user and selected user
-  const fetchMessages = useCallback(() => {
-    if (selectedUser && loggedInUser) {
-      const currentUsername = loggedInUser.username || loggedInUser.name;
-      const selectedUsername = selectedUser.username || selectedUser.name;
-      setLoading(true);
-      chatApi.getMessagesBetweenUsers(currentUsername, selectedUsername)
-        .then(setMessages)
-        .catch(setError)
-        .finally(() => setLoading(false));
-    } else {
+  // Fetch messages between logged-in user and selected user
+  const fetchMessages = useCallback(async () => {
+    if (!selectedUser || !loggedInUser) {
       setMessages([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const msgs = await chatApi.getMessagesBetweenUsers(
+        loggedInUser.username || loggedInUser.name,
+        selectedUser.username || selectedUser.name
+      );
+      setMessages(msgs);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
     }
   }, [selectedUser, loggedInUser]);
 
-  // Fetch all users from backend
-  useEffect(() => {
-    chatApi.getAllUsers()
-      .then(users => {
-        // Exclude logged in user from the list
-        const username = loggedInUser?.username || loggedInUser?.name;
-        const filteredUsers = users.filter(u => (u.username || u.name) !== username);
-        setAllUsers(filteredUsers);
-      })
-      .catch((err) => {
+  // Send a message to the selected user
+  const sendMessage = useCallback(
+    async (msg) => {
+      if (!selectedUser || !loggedInUser) return;
+
+      const tempId = Date.now();
+      const optimisticMsg = { ...msg, id: tempId, sender: loggedInUser.username || loggedInUser.name };
+      setMessages((prev) => [...prev, optimisticMsg]);
+
+      try {
+        await chatApi.sendMessage({
+          ...msg,
+          recipient: selectedUser.username || selectedUser.name,
+          sender: loggedInUser.username || loggedInUser.name,
+        });
+
+        await fetchMessages();
+        await fetchAllMessages();
+      } catch (err) {
         setError(err);
-      });
-  }, [loggedInUser]);
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      }
+    },
+    [selectedUser, loggedInUser, fetchMessages, fetchAllMessages]
+  );
 
-  // Load all messages for inbox on mount and when user changes
-  useEffect(() => {
-    fetchAllMessages();
-  }, [fetchAllMessages]);
-
-  // Load messages for current chat when selected user changes
-  useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
-
-  // Send a new message
-  const sendMessage = useCallback(async (msg) => {
-    setLoading(true);
-    // Optimistically add the message for instant feedback
-    const tempId = Date.now();
-    const optimisticMsg = { ...msg, id: tempId };
-    setMessages((prev) => [...prev, optimisticMsg]);
-    try {
-      // Add recipient from selectedUser to message before sending
-      const msgWithRecipient = { ...msg, recipient: selectedUser?.username || selectedUser?.name };
-      const newMsg = await chatApi.sendMessage(msgWithRecipient);
-      // Refresh both current conversation and inbox after sending
-      fetchMessages();
-      fetchAllMessages();
-    } catch (err) {
-      setError(err);
-      // Remove optimistic message on error
-      setMessages((prev) => prev.filter(m => m.id !== tempId));
-    }
-    setLoading(false);
-  }, [selectedUser, fetchMessages, fetchAllMessages]);
-
-  // Delete a message
   const deleteMessage = useCallback(async (id) => {
     setLoading(true);
     try {
@@ -103,11 +89,11 @@ export const ChatProvider = ({ children }) => {
       setMessages((prev) => prev.filter((m) => m.id !== id));
     } catch (err) {
       setError(err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  // Search messages
   const searchMessages = useCallback(async (keyword) => {
     setLoading(true);
     try {
@@ -115,31 +101,58 @@ export const ChatProvider = ({ children }) => {
       setMessages(results);
     } catch (err) {
       setError(err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  // Manual refresh function for when user wants to check for new messages
   const refreshMessages = useCallback(() => {
     fetchMessages();
     fetchAllMessages();
   }, [fetchMessages, fetchAllMessages]);
 
+  // Fetch all users for inbox/search
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const users = await chatApi.getAllUsers();
+        const username = loggedInUser?.username || loggedInUser?.name;
+        const filteredUsers = users.filter((u) => (u.username || u.name) !== username);
+        setAllUsers(filteredUsers);
+      } catch (err) {
+        setError(err);
+      }
+    };
+    loadUsers();
+  }, [loggedInUser]);
+
+  // Fetch all messages on mount or when logged-in user changes
+  useEffect(() => {
+    fetchAllMessages();
+  }, [fetchAllMessages]);
+
+  // Fetch selected user's messages when selection changes
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
   return (
-    <ChatContext.Provider value={{ 
-      messages, 
-      allMessages, 
-      loading, 
-      error, 
-      sendMessage, 
-      deleteMessage, 
-      searchMessages, 
-      selectedUser, 
-      setSelectedUser, 
-      allUsers, 
-      fetchAllMessages,
-      refreshMessages 
-    }}>
+    <ChatContext.Provider
+      value={{
+        messages,
+        allMessages,
+        allUsers,
+        selectedUser,
+        setSelectedUser,
+        loading,
+        error,
+        sendMessage,
+        deleteMessage,
+        searchMessages,
+        fetchAllMessages,
+        refreshMessages,
+      }}
+    >
       {children}
     </ChatContext.Provider>
   );

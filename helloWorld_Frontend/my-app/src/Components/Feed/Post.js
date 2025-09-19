@@ -1,14 +1,29 @@
 import React, { useState } from "react";
 
-
 const Post = ({ post, onRightSwipe, onLeftSwipe }) => {
   const [open, setOpen] = useState(false);
 
+  // Construct image URL if post.image exists
+  const imageUrl = post.image
+    ? `http://localhost:9091/uploads/${post.image}` // adjust if backend serves images differently
+    : null;
+
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-lg p-6 w-full flex flex-col items-center justify-center">
-      {/* Image placeholder */}
-      <div className="w-full h-64 bg-gray-800 rounded-lg mb-4 flex items-center justify-center text-gray-500">
-        Image Placeholder
+      
+      {/* Image from backend */}
+      <div className="w-full h-64 mb-4 flex items-center justify-center">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={post.title}
+            className="w-full h-full object-cover rounded-lg"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-800 rounded-lg flex items-center justify-center text-gray-500">
+            No Image
+          </div>
+        )}
       </div>
 
       {/* Title + Description */}

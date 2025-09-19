@@ -1,10 +1,8 @@
-
 import React, { createContext, useContext, useState } from "react";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
 
 const AppContext = createContext();
-
 export const useAppContext = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
@@ -21,7 +19,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const addContributionMessage = (post, fromUser) => {
-    const toUserId = post.userId;
+    const toUserId = post.authorId;
     const msg = {
       user: fromUser.name,
       text: `wants to contribute to your post: "${post.title}"`,
