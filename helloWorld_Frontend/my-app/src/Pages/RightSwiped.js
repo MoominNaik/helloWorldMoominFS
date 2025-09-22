@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAppContext } from "../AppContext";
 import { getRightSwipedPosts } from "../Components/Feed/api";
+import { useNavigate } from "react-router-dom";
 
 const formatTime = (iso) => {
   const date = new Date(iso);
@@ -12,6 +13,7 @@ const RightSwiped = () => {
   const [rightSwipedPosts, setRightSwipedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   // util to build usable image URL like in Post.js
   const resolveImageSrc = (post) => {
@@ -108,6 +110,18 @@ const RightSwiped = () => {
               <div className="flex items-center justify-between mt-2">
                 <span className="text-green-300 text-xs">{authorName}</span>
                 <span className="text-xs text-gray-500">{when ? formatTime(when) : ""}</span>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-3 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/chat/${encodeURIComponent(authorName)}`)}
+                  className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded-sm transition shadow-[0_0_8px_0_#00FF7F]"
+                  title={`Chat with ${authorName}`}
+                >
+                  Chat
+                </button>
               </div>
             </div>
           );

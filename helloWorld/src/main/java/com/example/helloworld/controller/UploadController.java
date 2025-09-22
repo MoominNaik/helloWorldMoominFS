@@ -20,11 +20,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://10.109.206.114:3000"
-}, allowCredentials = "true")
 public class UploadController {
 
     @Value("${app.upload.dir:uploads}")

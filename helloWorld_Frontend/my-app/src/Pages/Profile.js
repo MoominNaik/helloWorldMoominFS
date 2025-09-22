@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { userPosts, fetchUserPosts } = useAppContext();
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({
@@ -13,17 +13,18 @@ const Profile = () => {
     lastName: "",
     designation: "",
     bio: "",
-    emailAddress: "",
-    profilePic: ""
+    email: "",
+    profilePicUrl: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     if (user && user.id) {
       fetchUserPosts(user.id);
     }
-  }, [user, fetchUserPosts]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user || !user.username) return;
@@ -45,7 +46,7 @@ const Profile = () => {
       }
     };
     fetchProfile();
-  }, [user]);
+  }, [user?.username]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 md:p-10 bg-black font-mono text-green-400">
@@ -56,9 +57,9 @@ const Profile = () => {
         
         {/* Profile Picture */}
         <div className="w-40 h-40 rounded bg-gradient-to-r from-green-500 to-teal-400 flex items-center justify-center text-white text-lg shadow-2xl overflow-hidden mr-12">
-          {form.profilePic ? (
+          {form.profilePicUrl ? (
             <img
-              src={form.profilePic.startsWith("http") ? form.profilePic : `http://localhost:9091${form.profilePic}`}
+              src={form.profilePicUrl.startsWith("http") ? form.profilePicUrl : `http://localhost:9091${form.profilePicUrl}`}
               alt="Profile"
               className="w-full h-full object-cover rounded"
             />
@@ -71,7 +72,7 @@ const Profile = () => {
         <div className="flex flex-col md:flex-row justify-between items-start w-full md:pl-12">
           <div className="flex flex-col items-start w-full max-w-3xl space-y-4">
             <h1 className="text-4xl font-bold">{user?.name || user?.username || "User"}</h1>
-            <p className="text-gray-300">{user?.email}</p>
+            <p className="text-gray-300">{form.email || user?.email}</p>
             <p className="text-gray-400">{form.designation}</p>
             <p className="text-gray-400">{form.bio}</p>
 
@@ -102,7 +103,10 @@ const Profile = () => {
           <div className="bg-gray-900 rounded-md p-10 w-full max-w-md shadow-2xl relative">
             <button
               className="absolute top-4 right-4 text-green-400 text-xl font-bold cursor-pointer"
-              onClick={() => setEditOpen(false)}
+              onClick={() => {
+                setEditOpen(false);
+                setError("");
+              }}
               aria-label="Close"
             >
               &#10005;
@@ -116,20 +120,31 @@ const Profile = () => {
                 setError("");
                 try {
                   const token = localStorage.getItem("token");
+                  const payload = {
+                    username: form.username,
+                    firstName: form.firstName,
+                    lastName: form.lastName,
+                    email: form.email,
+                    designation: form.designation,
+                    bio: form.bio,
+                  };
                   const res = await fetch("http://localhost:9091/api/profile/edit", {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
                       ...(token ? { "Authorization": `Bearer ${token}` } : {})
                     },
-                    body: JSON.stringify(form)
+                    body: JSON.stringify(payload)
                   });
                   if (!res.ok) throw new Error("Profile update failed");
                   const saved = await res.json();
                   setForm(f => ({ ...f, ...saved }));
-                  setError("Profile updated");
+                  // Keep AuthContext in sync for email shown elsewhere
+                  setUser(prev => prev ? { ...prev, email: saved.email } : prev);
+                  setError("");
+                  setSuccess("Profile updated");
                   setTimeout(() => {
-                    setError("");
+                    setSuccess("");
                     setEditOpen(false);
                   }, 1500);
                 } catch (err) {
@@ -144,7 +159,7 @@ const Profile = () => {
               <input type="text" placeholder="Username" value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} className="px-4 py-2 rounded-sm bg-gray-800 text-green-300 focus:outline-none focus:ring-1 focus:ring-green-400" required />
               <input type="text" placeholder="First Name" value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} className="px-4 py-2 rounded-sm bg-gray-800 text-green-300 focus:outline-none focus:ring-1 focus:ring-green-400" required />
               <input type="text" placeholder="Last Name" value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} className="px-4 py-2 rounded-sm bg-gray-800 text-green-300 focus:outline-none focus:ring-1 focus:ring-green-400" required />
-              <input type="email" placeholder="Email Address" value={form.emailAddress} onChange={e => setForm(f => ({ ...f, emailAddress: e.target.value }))} className="px-4 py-2 rounded-sm bg-gray-800 text-green-300 focus:outline-none focus:ring-1 focus:ring-green-400" required />
+              <input type="email" placeholder="Email Address" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="px-4 py-2 rounded-sm bg-gray-800 text-green-300 focus:outline-none focus:ring-1 focus:ring-green-400" required />
               <input type="text" placeholder="Designation" value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))} className="px-4 py-2 rounded-sm bg-gray-800 text-green-300 focus:outline-none focus:ring-1 focus:ring-green-400" />
               <textarea placeholder="Bio" value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} className="px-4 py-2 rounded-sm bg-gray-800 text-green-300 focus:outline-none focus:ring-1 focus:ring-green-400" rows={3} />
               <label className="text-green-400 mb-1">Profile Image</label>
@@ -157,14 +172,17 @@ const Profile = () => {
                   const formData = new FormData();
                   formData.append("file", file);
                   const token = localStorage.getItem("token");
-                  const res = await fetch("http://localhost:9091/api/images/upload", {
+                  const res = await fetch("http://localhost:9091/api/profile/upload", {
                     method: "POST",
                     headers: { ...(token ? { "Authorization": `Bearer ${token}` } : {}) },
                     body: formData
                   });
                   if (!res.ok) throw new Error("Image upload failed");
                   const data = await res.json();
-                  setForm(f => ({ ...f, profilePic: data.url || data.path || data.imageUrl || "" }));
+                  // Expecting ProfileDTO with profilePicUrl
+                  setForm(f => ({ ...f, ...data }));
+                  setSuccess("Image uploaded");
+                  setTimeout(() => setSuccess(""), 1500);
                 } catch {
                   setError("Image upload failed");
                 } finally {
@@ -203,6 +221,12 @@ const Profile = () => {
           ))}
         </div>
       </div>
+      {/* Success Toast */}
+      {success && (
+        <div className="fixed bottom-6 right-6 bg-green-600 text-black px-4 py-2 rounded-sm shadow-[0_0_10px_0_#00FF7F] font-mono z-50">
+          {success}
+        </div>
+      )}
     </div>
   );
 };

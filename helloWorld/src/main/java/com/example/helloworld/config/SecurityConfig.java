@@ -50,10 +50,11 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins(
-                        "http://localhost:3000",
-                        "http://10.109.206.114:3000",
-                        "http://127.0.0.1:3000"
+                    // Allow all localhost/127.0.0.1 ports for development, and your LAN IP on any port
+                    .allowedOriginPatterns(
+                        "http://localhost:*",
+                        "http://127.0.0.1:*",
+                        "http://10.109.206.114:*"
                     )
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                     .allowedHeaders("*")

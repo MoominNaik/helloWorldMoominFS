@@ -82,11 +82,12 @@ function MainContent() {
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/chat" element={<Chat />} />
+            <Route path="/chat/:username" element={<Chat />} />
             <Route path="/right-swiped" element={<RightSwiped />} />
             <Route path="/post-project" element={<PostProject />} />
             <Route path="/search" element={<SearchPage />} />
-            <Route path="/public-profile/:email" element={<PublicProfile />} />
-            <Route path="/debug-profile/:email" element={<DebugProfile />} />
+            <Route path="/public-profile/:username" element={<PublicProfile />} />
+            <Route path="/debug-profile/:username" element={<DebugProfile />} />
 
             {/* 404 Route */}
             <Route path="*" element={

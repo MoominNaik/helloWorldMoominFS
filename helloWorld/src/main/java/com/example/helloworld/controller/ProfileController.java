@@ -63,6 +63,7 @@ public class ProfileController {
 
     // DTO to avoid exposing password
     static class ProfileDTO {
+        public Long id;
         public String username;
         public String firstName;
         public String lastName;
@@ -72,6 +73,7 @@ public class ProfileController {
         public String profilePicUrl;
 
         public ProfileDTO(User user) {
+            this.id = user.getId();
             this.username = user.getUsername();
             this.firstName = user.getFirstName();
             this.lastName = user.getLastName();

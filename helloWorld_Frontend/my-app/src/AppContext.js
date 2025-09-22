@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
 
@@ -37,28 +37,28 @@ export const AppProvider = ({ children }) => {
     setUserPosts((prev) => [post, ...prev]);
   };
 
-  const fetchUserPosts = async (userId) => {
+  const fetchUserPosts = useCallback(async (userId) => {
     try {
       const res = await axios.get(`http://localhost:9091/api/posts/user/${userId}`);
       setUserPosts(res.data);
     } catch (err) {
       setUserPosts([]);
     }
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    CURRENT_USER,
+    rightSwipedPosts,
+    addRightSwipedPost,
+    chatMessages,
+    addContributionMessage,
+    userPosts,
+    addNewPost,
+    fetchUserPosts,
+  }), [CURRENT_USER, rightSwipedPosts, chatMessages, userPosts, fetchUserPosts]);
 
   return (
-    <AppContext.Provider
-      value={{
-        CURRENT_USER,
-        rightSwipedPosts,
-        addRightSwipedPost,
-        chatMessages,
-        addContributionMessage,
-        userPosts,
-        addNewPost,
-        fetchUserPosts,
-      }}
-    >
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );
