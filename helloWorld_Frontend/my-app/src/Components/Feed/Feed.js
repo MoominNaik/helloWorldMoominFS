@@ -1,5 +1,5 @@
 // Feed.js (Matrix background fixed)
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Post from "./Post";
 import { swipePost } from "./api";
 import { leftSwipePost } from "./leftSwipeApi";
@@ -13,77 +13,76 @@ const Feed = ({ onRightSwipe, onLeftSwipe }) => {
   const [index, setIndex] = useState(0);
   const [leftSwiped, setLeftSwiped] = useState([]);
   const [direction, setDirection] = useState(0);
+  const [allCategories, setAllCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const { addRightSwipedPost, CURRENT_USER } = useAppContext();
-  const canvasRef = useRef(null);
 
+  // Helper to compare arrays by value
+  const arraysEqual = (a = [], b = []) => {
+    if (a === b) return true;
+    if (!Array.isArray(a) || !Array.isArray(b)) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  };
+
+  // Fetch posts whenever user or selected categories change
   useEffect(() => {
     const fetchPosts = async () => {
+      if (!CURRENT_USER || !CURRENT_USER.id) return;
+      setLoading(true);
+      setError("");
       try {
-        const res = await axios.get(
-          `http://localhost:9091/api/posts/feed?userId=${CURRENT_USER.id}`
-        );
-        setPosts(res.data);
-      } catch {
+        const params = new URLSearchParams();
+        params.set("userId", CURRENT_USER.id);
+        if (selectedCategories && selectedCategories.length > 0) {
+          // backend supports comma-separated or repeated params; we'll send comma-separated
+          params.set("categories", selectedCategories.join(","));
+        }
+        const url = `http://localhost:9091/api/posts/feed?${params.toString()}`;
+        const res = await axios.get(url);
+        setPosts(res.data || []);
+        // We don't set categories here; categories should reflect only currently visible posts
+      } catch (e) {
+        console.error("Failed to fetch posts:", e);
+        setError("Failed to load feed");
         setPosts([]);
+      } finally {
+        setLoading(false);
       }
     };
-    if (CURRENT_USER && CURRENT_USER.id) fetchPosts();
-  }, [CURRENT_USER]);
+    fetchPosts();
+  }, [CURRENT_USER, selectedCategories]);
 
   const visiblePosts = posts.filter((p) => !leftSwiped.includes(p.id));
   const currentPost = visiblePosts[index] || null;
 
-  // ---------- Matrix Background ----------
+  // Recompute available categories based on currently visible posts
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let animationFrameId;
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()*&^%".split("");
-    let fontSize = 16;
-    let columns;
-    let drops = [];
+    const cats = Array.from(
+      new Set(visiblePosts.map((p) => (p.category || "").trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b));
+    // Only update if changed to avoid triggering dependent effects unnecessarily
+    if (!arraysEqual(allCategories, cats)) {
+      setAllCategories(cats);
+    }
+    // Clean any selected categories that are no longer available
+    setSelectedCategories((prev) => {
+      const cleaned = prev.filter((c) => cats.includes(c));
+      return arraysEqual(prev, cleaned) ? prev : cleaned;
+    });
+    // Reset index if no more visible posts in current selection
+    if (!currentPost && visiblePosts.length > 0) {
+      setIndex(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posts, leftSwiped]);
 
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      columns = Math.floor(canvas.width / fontSize);
-      drops = Array(columns).fill(0);
-    };
-    
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-
-    const draw = () => {
-      // Clear with a slightly transparent black to create trails
-      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Set text color and style
-      ctx.fillStyle = "#22c55e"; // Brighter green for better visibility
-      ctx.font = `bold ${fontSize}px monospace`;
-      ctx.shadowColor = "#22c55e";
-      ctx.shadowBlur = 5;
-
-      for (let i = 0; i < drops.length; i++) {
-        const text = letters[Math.floor(Math.random() * letters.length)];
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        drops[i]++;
-      }
-
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener("resize", resizeCanvas);
-    };
-  }, []);
+  // Matrix background is handled by Home.js. Feed contains only content and animations.
 
   // ---------- Swipe Handlers ----------
   const handleRightSwipe = async () => {
@@ -141,15 +140,64 @@ const Feed = ({ onRightSwipe, onLeftSwipe }) => {
   }
 
   return (
-    <div className="relative w-full h-full bg-black">
-      {/* Matrix Canvas */}
-      <canvas
-        ref={canvasRef}
-        className="fixed top-0 left-0 w-full h-full opacity-30"
-        style={{ zIndex: 1 }}
-      />
-
-      <div className="relative z-10 w-full max-w-2xl h-auto">
+    <div className="relative w-full">
+      <div className="relative w-full max-w-2xl h-auto">
+        {/* Category Filters */}
+        <div className="w-full mx-auto max-w-xl mb-4 p-4 rounded-lg bg-gray-900/70 border border-green-500/40 text-green-300 flex flex-col items-center justify-center">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs">
+              {loading ? <span className="opacity-80">Loading...</span> : null}
+              {error ? <span className="text-red-400">{error}</span> : null}
+            </div>
+          </div>
+          {allCategories.length === 0 ? (
+            <p className="text-xs opacity-80">No categories discovered yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2 w-full max-w-xl mx-auto justify-center">
+              {allCategories.map((cat) => {
+                const checked = selectedCategories.includes(cat);
+                return (
+                  <motion.button
+                    key={cat}
+                    type="button"
+                    aria-pressed={checked}
+                    whileHover={{ scale: 1.05, boxShadow: "0 0 12px #22c55e" }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setIndex(0);
+                      setSelectedCategories((prev) =>
+                        checked ? prev.filter((c) => c !== cat) : [...prev, cat]
+                      );
+                    }}
+                    className={`
+                      px-3 py-1 rounded-full text-xs tracking-wider transition-all duration-150
+                      border shadow-[0_0_8px_rgba(34,197,94,0.35)]
+                      ${
+                        checked
+                          ? "bg-green-500/20 border-green-400 text-green-100 ring-1 ring-green-400/60"
+                          : "bg-gray-900/60 border-green-700/40 text-green-300 hover:bg-green-500/10"
+                      }
+                    `}
+                    style={{ backdropFilter: "blur(2px)" }}
+                  >
+                    <span className="opacity-90">#</span> {cat}
+                  </motion.button>
+                );
+              })}
+              {selectedCategories.length > 0 && (
+                <button
+                  className="ml-2 px-3 py-1 text-xs rounded bg-transparent border border-red-500/70 text-red-300 hover:bg-red-600/20 shadow-[0_0_8px_rgba(239,68,68,0.35)]"
+                  onClick={() => {
+                    setIndex(0);
+                    setSelectedCategories([]);
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         <AnimatePresence mode="wait" custom={direction}>
           {currentPost ? (
             <motion.div
@@ -164,7 +212,8 @@ const Feed = ({ onRightSwipe, onLeftSwipe }) => {
               animate="center"
               exit="exit"
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="w-full"
+              className="w-full relative"
+              style={{ willChange: "transform, opacity", zIndex: 2 }}
             >
                 <Post
                   post={currentPost}
@@ -178,6 +227,7 @@ const Feed = ({ onRightSwipe, onLeftSwipe }) => {
                 className="w-full bg-gray-900 border-2 border-green-400 shadow-[0_0_15px_#22c55e] p-6 rounded-lg text-center text-green-400 text-xl relative z-10"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                style={{ zIndex: 2 }}
               >
                 ⚡ No more posts to show.
               </motion.div>

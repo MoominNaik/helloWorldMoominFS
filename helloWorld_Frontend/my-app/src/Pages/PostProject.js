@@ -49,12 +49,32 @@ const PostProject = () => {
     setError(null);
     setSuccess(false);
 
+    let imagePath = null;
+    try {
+      if (form.image) {
+        const fd = new FormData();
+        fd.append("file", form.image);
+        const uploadRes = await axios.post(
+          "http://localhost:9091/api/uploads",
+          fd
+        );
+        // Backend returns { imageUrl: "/uploads/<storedName>", filename: "<storedName>" }
+        imagePath = uploadRes?.data?.imageUrl || null;
+      }
+    } catch (err) {
+      console.error("Image upload failed", err);
+      setError("Image upload failed. Try again.");
+      setSubmitting(false);
+      return;
+    }
+
     const postData = {
       title: form.name,
       description: form.description,
       stack: form.stack,
       category: form.category,
-      image: form.image ? form.image.name : null,
+      // Store a path or URL in the image field (backend model has only `image`)
+      image: imagePath, // e.g. "/uploads/<name>" or null
     };
 
     try {
@@ -63,7 +83,8 @@ const PostProject = () => {
       setTimeout(() => navigate("/profile"), 1200);
       setForm({ name: "", description: "", stack: "", image: null, category: "Web Development" });
       setPreview(null);
-    } catch {
+    } catch (err) {
+      console.error("Create post failed", err);
       setError("Failed to post. Try again.");
     }
     setSubmitting(false);

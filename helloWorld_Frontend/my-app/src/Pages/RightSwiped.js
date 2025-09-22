@@ -13,6 +13,17 @@ const RightSwiped = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // util to build usable image URL like in Post.js
+  const resolveImageSrc = (post) => {
+    const BACKEND_ORIGIN = "http://localhost:9091";
+    const IMAGE_BASE = `${BACKEND_ORIGIN}/uploads/`;
+    const rawImage = post?.imageUrl || post?.image || null;
+    if (!rawImage || typeof rawImage !== "string") return null;
+    if (/^https?:\/\//i.test(rawImage)) return rawImage;
+    if (rawImage.startsWith("/")) return `${BACKEND_ORIGIN}${rawImage}`;
+    return `${IMAGE_BASE}${encodeURIComponent(rawImage)}`;
+  };
+
   useEffect(() => {
     async function fetchRightSwipes() {
       setLoading(true);
@@ -47,26 +58,60 @@ const RightSwiped = () => {
           </div>
         )}
 
-        {rightSwipedPosts.map((post, idx) => (
-          <div
-            key={post.userId || idx}
-            className="bg-gray-900 p-6 shadow-lg border border-gray-700 flex flex-col justify-between w-72 transition-all duration-300 hover:shadow-[0_0_30px_0_#00FF7F]"
-          >
-            <div className="mb-3">
-              <h2 className="text-base md:text-lg font-bold text-green-400 mb-1.5">
+        {rightSwipedPosts.map((post, idx) => {
+          const imgSrc = resolveImageSrc(post);
+          const authorName = post?.author?.username || post?.user || "Unknown";
+          const when = post?.swipedAt || post?.timestamp;
+          return (
+            <div
+              key={post.id || idx}
+              className="bg-gray-900 border-2 border-green-400 shadow-[0_0_15px_#22c55e] rounded-lg p-4 w-full max-w-sm transition-all duration-300 hover:shadow-[0_0_25px_#22c55e]"
+            >
+              {/* Image */}
+              {imgSrc ? (
+                <img
+                  src={imgSrc}
+                  alt={post.title || "Project image"}
+                  className="w-full h-40 object-cover mb-4 border border-green-500 rounded-md"
+                />
+              ) : (
+                <div className="w-full h-40 bg-gray-800 mb-4 flex items-center justify-center text-green-400 text-sm border border-green-500 rounded-md">
+                  [ IMAGE NOT PROVIDED ]
+                </div>
+              )}
+
+              {/* Title */}
+              <h2 className="text-xl font-bold text-green-400 mb-2 text-center tracking-wider">
                 {post.title}
               </h2>
-              <p className="text-gray-400 text-sm">{post.description}</p>
-            </div>
 
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-green-400 text-sm font-medium">{post.user}</span>
-              <span className="text-xs text-gray-500">
-                {post.swipedAt ? formatTime(post.swipedAt) : formatTime(post.timestamp)}
-              </span>
+              {/* Description */}
+              <div className="mb-3 text-gray-300 bg-black/30 rounded-md border border-green-800/40 p-3 text-center">
+                <p className="text-sm leading-relaxed">{post.description}</p>
+              </div>
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-2 justify-center mb-3">
+                {post.category && (
+                  <span className="px-2.5 py-0.5 text-xs uppercase tracking-wider rounded-full border border-green-500 text-green-300 bg-green-500/10">
+                    {post.category}
+                  </span>
+                )}
+                {post.stack && (
+                  <span className="px-2.5 py-0.5 text-xs uppercase tracking-wider rounded-full border border-green-500 text-green-300 bg-green-500/10">
+                    {post.stack}
+                  </span>
+                )}
+              </div>
+
+              {/* Footer: author + time */}
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-green-300 text-xs">{authorName}</span>
+                <span className="text-xs text-gray-500">{when ? formatTime(when) : ""}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       </div>
     </div>

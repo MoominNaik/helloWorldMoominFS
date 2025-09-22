@@ -1,7 +1,5 @@
 package com.example.helloworld.controller;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
-
 import com.example.helloworld.model.Post;
 import com.example.helloworld.model.User;
 import com.example.helloworld.service.PostService;
@@ -10,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
@@ -37,8 +34,11 @@ public class PostController {
     }
 
     @GetMapping("/feed")
-    public List<Post> feed(@RequestParam Long userId) {
+    public List<Post> feed(@RequestParam Long userId, @RequestParam(required = false) List<String> categories) {
         User user = userService.findById(userId).orElseThrow();
-        return postService.findUnswipedPostsForUser(user);
+        if (categories == null || categories.isEmpty()) {
+            return postService.findUnswipedPostsForUser(user);
+        }
+        return postService.findUnswipedPostsForUser(user, categories);
     }
 }

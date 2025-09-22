@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -27,7 +28,9 @@ public class SecurityConfig {
         "/api/users/logout",
         "/api/users",
         "/api/posts/**",
-        "/api/profile/**"  // Allow public access to profile endpoints
+        "/api/profile/**",  // Allow public access to profile endpoints
+        "/api/uploads",     // Allow image upload without auth (adjust if needed)
+        "/uploads/**"       // Allow serving static uploaded files
     };
 
     private static final String[] AUTHENTICATED_ENDPOINTS = {
@@ -49,7 +52,8 @@ public class SecurityConfig {
                 registry.addMapping("/**")
                     .allowedOrigins(
                         "http://localhost:3000",
-                        "http://10.109.206.114:3000"
+                        "http://10.109.206.114:3000",
+                        "http://127.0.0.1:3000"
                     )
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                     .allowedHeaders("*")
@@ -67,6 +71,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints
                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                // Always allow preflight requests
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Authenticated endpoints
                 .requestMatchers(AUTHENTICATED_ENDPOINTS).authenticated()
                 // Secure all other endpoints by default
